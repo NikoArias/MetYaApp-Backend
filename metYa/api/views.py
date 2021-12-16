@@ -1,8 +1,14 @@
 from django.shortcuts import render
 from django.http import JsonResponse
 import json
+import jwt
 from datetime import datetime
 from .models import Event
+from django.contrib.auth.models import User
+from django.contrib.auth import authenticate, login
+from metYa.settings import SECRET_KEY
+
+from django.core.paginator import Paginator
 
 
 def version_endpoint(request):
@@ -29,21 +35,110 @@ def hello_endpoint(request):
             "msg": "crappy method",
         }, status=405)
 
+def login_endpoint(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        username = data.get("username")
+        password = data.get("password")
+
+
+
+        user = authenticate(request, username=username, password=password)
+        if user is None:
+            return JsonResponse({
+                "msg": "username or password is incorrect",
+            }, status=401)
+
+
+
+        login(request, user)
+
+
+
+        encoded_jwt = jwt.encode({"user_id": user.id}, SECRET_KEY, algorithm="HS256")
+
+
+
+        return JsonResponse({
+            "id": user.id,
+            "email": user.email,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "username": user.username,
+            "token": encoded_jwt,
+        })
+
+    else:
+        return JsonResponse({
+            "msg": "method not allowed",
+        }, status=405)
+
+def register_endpoint(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        first_name = data.get("first_name")
+        last_name = data.get("last_name")
+        username = data.get("username")
+        email = data.get("email")
+        password = data.get("password")
+
+
+
+
+        user = User.objects.create_user(username, email, password)
+        user.first_name = first_name
+        user.last_name = last_name
+        user.email = email
+        user.save()
+
+
+
+        return JsonResponse({
+            "id": user.id,
+            "email": user.email,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "username": user.username,
+        })
+    else:
+        return JsonResponse({
+        "msg": "method not allowed",
+        }, status=405)
+
+
 def list_create_event_api_endpoint(request):
     if request.method == "GET":
-        results = [
-            {
-                "id": 1,
-                "event_name": "Party",
-                "event_address": "123Boulevar North",
-                "event_p_c": "N6G 0C4",
-                "event_dt": "",
-                "filters": "",
-                "event_details" : "Details from the user",
+        events = Event.objects.all()
+        events_count = Event.objects.count()
+
+        limit_numb = request.GET.get("limit", 25)
+        paginator = Paginator(events, limit_numb)
+        page_numb = request.GET.get("page", 1)
+
+        page_obj = paginator.get_page(page_numb)
+
+        results = []
+        for event in page_obj:
+            r = {
+                "id": event.id,
+                "event_host": event.event_host,
+                "event_name": event.event_name,
+                "event_address": event.event_address,
+                "event_pc": event.event_pc,
+                "event_dt": event.event_dt,
+                "event_details": event.event_details,
+                "event_long": event.event_long,
+                "event_lat": event.event_lat,
+                "event_img": event.event_img,
 
             }
-        ]
-        return JsonResponse({"results": results})
+            results.append(r)
+
+        return JsonResponse({
+            "count": events_count,
+            "results": results,
+        })
+
     elif request.method == "POST":
         try:
             data = json.loads(request.body)
@@ -51,19 +146,27 @@ def list_create_event_api_endpoint(request):
             return JsonResponse({"msg":"Fill the forms"}, status=400 )
 
         event_name = data.get("event_name")
+        event_host = data.get("event_host")
         event_address = data.get("event_address")
         event_pc = data.get("event_pc")
         event_dt = data.get("event_dt")
         event_dt = datetime.strptime(event_dt, "%a, %d %b %Y %H:%M:%S %Z")
         event_details = data.get("event_details")
+        event_lat = data.get("event_lat")
+        event_long= data.get("event_long")
+        event_img = data.get("event_img")
 
 
         event = Event.objects.create(
-             event_name=event_name,
-             event_address=event_address,
-              event_pc=event_pc,
-              event_dt=event_dt,
-              event_details=event_details
+              event_host = event_host,
+              event_name = event_name,
+              event_address = event_address,
+              event_pc = event_pc,
+              event_dt = event_dt,
+              event_details = event_details,
+              event_lat = event_lat,
+              event_long = event_long,
+              event_img = event_img,
         )
 
 
