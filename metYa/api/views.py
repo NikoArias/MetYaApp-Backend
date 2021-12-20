@@ -173,3 +173,101 @@ def list_create_event_api_endpoint(request):
         return JsonResponse({"console": "Event created"})
     else:
         return JsonResponse({"message" : "something went wrong, try again"}, status=405)
+
+def retrieve_update_delete_event_endpoint(request,id):
+    print("---------------------------------------------------------------------------------------------------")
+    try:
+        event = event.objects.get(id=id)
+    except event.DoesNotExist:
+        return JsonResponse({"error":"d.n.e."},status=404)
+
+
+    if request.method == "GET": # Details
+        # "Serialization"
+        response = {
+            "id": event.id,
+            "event_host": event.event_host,
+            "event_name": event.event_name,
+            "event_address": event.event_address,
+            "event_pc": event.event_pc,
+            "event_dt": event.event_dt,
+            "event_details": event.event_details,
+            "event_long": event.event_long,
+            "event_lat": event.event_lat,
+            "event_img": event.event_img,
+        }
+        return JsonResponse(response, status=200)
+
+    elif request.method == "PUT": # Update
+        data = json.loads(request.body)
+
+        event_name = data.get("event_name")
+        event_host = data.get("event_host")
+        event_address = data.get("event_address")
+        event_pc = data.get("event_pc")
+        event_dt = data.get("event_dt")
+        event_dt = datetime.strptime(event_dt, "%a, %d %b %Y %H:%M:%S %Z")
+        event_details = data.get("event_details")
+        event_lat = data.get("event_lat")
+        event_long= data.get("event_long")
+        event_img = data.get("event_img")
+
+
+        event.event_name = event_name
+        event.event_host = event_host
+        event.event_address = event_address
+        event.event_pc = event_pc
+        event.event_dt = event_dt
+        event.event_details = event_details
+        event.event_lat = event_lat
+        event.event_long = event_long
+        event.event_img = event_img
+        event.save()
+
+        # "Serialization"
+        response = {
+            "id": event.id,
+            "event_host": event.event_host,
+            "event_name": event.event_name,
+            "event_address": event.event_address,
+            "event_pc": event.event_pc,
+            "event_dt": event.event_dt,
+            "event_details": event.event_details,
+            "event_long": event.event_long,
+            "event_lat": event.event_lat,
+            "event_img": event.event_img,
+        }
+        return JsonResponse(response, status=200)
+
+    elif request.method == "DELETE": # Delete
+        event.delete()
+        return JsonResponse({}, status=204)
+    else:
+        return JsonResponse({
+            "msg": "method not allowed",
+        }, status=405)
+
+def create_user_profile_endpoint(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+
+
+
+        user_f_name = data.get("first name")
+        user_l_name = data.get("last name")
+        user_descrip = data.get("Description")
+        f_link = data.get("facebook url")
+        t_link = data.get("twitter url")
+        i_link = data.get("instagram url")
+        s_link = data.get("snapchat url")
+
+
+
+
+        return JsonResponse({
+            "msg": "Welcome " + name,
+        })
+    else:
+        return JsonResponse({
+            "msg": "crappy method",
+        }, status=405)

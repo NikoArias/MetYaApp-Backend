@@ -13,4 +13,5 @@ urlpatterns = [
     path('events', views.list_create_event_api_endpoint, name="list_create_event_api_endpoint"),
     path('login', views.login_endpoint, name="login_endpoint"),
     path('register', views.register_endpoint, name="register_endpoint"),
+    path('event/<id>', views.retrieve_update_delete_event_endpoint, name="retrieve_update_delete_event_endpoint"),
 ]
